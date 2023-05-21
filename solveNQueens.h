@@ -14,6 +14,7 @@ public:
            vector<vector<string>> &ans);
 
   vector<vector<string>> solveNQueens(int n);
+  vector<vector<string>> solveFaster(int n);
 };
 
 #endif // SOLVENQUEENS_H_

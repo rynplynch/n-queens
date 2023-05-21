@@ -27,6 +27,12 @@ void leetTest() {
   assert(response.size() == checker.size());
   assert(response[0] == checker[0]);
   assert(response[1] == checker[1]);
+
+  response.clear();
+  response = solver.solveFaster(4);
+
+  // checking the response
+  assert(response.size() == checker.size());
 }
 
 void generateCSV(int k) {
@@ -79,8 +85,8 @@ int main() {
 
   // generateCSV();
 
-  genCSVForInt(7);
-  // leetTest();
+  // genCSVForInt(7);
+  leetTest();
 
   return 0;
 }
