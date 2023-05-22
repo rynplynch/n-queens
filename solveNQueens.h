@@ -8,13 +8,19 @@ using namespace std;
 
 class SolveNQueens {
 public:
-  bool valid(int row, int col, vector<string> arr);
+  bool isValidGen(vector<string> board, int row, int col);
 
-  void dfs(int index, int count, int n, vector<string> arr,
-           vector<vector<string>> &ans);
+  void recGen(vector<string> &board, vector<vector<string>> &solutions,
+              int currRow, int n, int queens);
 
-  vector<vector<string>> solveNQueens(int n);
-  vector<vector<string>> solveFaster(int n);
+  vector<vector<string>> solveGeneral(int n, bool writeState);
+
+  bool isValidOpt(vector<string> board, int row, int col);
+
+  void recOpt(vector<string> &board, vector<vector<string>> &solutions,
+              int currRow, int n, int queens);
+
+  vector<vector<string>> solveOpt(int n, bool writeState);
 };
 
 #endif // SOLVENQUEENS_H_

@@ -6,92 +6,218 @@
 using namespace std;
 
 int runs;
+ofstream aFile("every-state-of-the-board.csv");
 // print the board to file
-void printBoard(vector<string> currBoard) {
-  ofstream aFile("every-state-of-the-board.csv");
+// change the current square so we can see what is being exampined then change
+// it back
+void printBoard(vector<string> &currBoard, int indexR, int indexC) {
 
+  currBoard[indexR][indexC] = '$';
   for (int i = 0; i < currBoard.size(); i++) {
-    cout << currBoard[i];
-    cout << endl;
+    aFile << currBoard[i];
+    aFile << endl;
   }
-  cout << endl;
-
-  aFile.close();
+  currBoard[indexR][indexC] = '.';
+  aFile << endl;
 }
 
 // takes in two ints for the location of a square and the currentBoard
 // returns true if a queen can be placed there
-bool SolveNQueens::valid(int col, int row, vector<string> currBoard) {
+bool SolveNQueens::isValidGen(vector<string> board, int row, int col) {
   // the size of the board
-  int n = currBoard.size();
+  int n = board.size();
 
   // make sure there is not a queen already in your col
   for (int i = 0; i < n; i++) {
-    if (currBoard[col][i] != '.') {
+    if (board[i][col] != '.') {
       return false;
     }
   }
 
   // make sure there is not a queen already in your row
   for (int i = 0; i < n; i++) {
-    if (currBoard[i][row] != '.') {
+    if (board[row][i] != '.') {
       return false;
     }
   }
 
-  int i = col;
-  int j = row;
-  while (i >= 0 && j >= 0) {
-    if (currBoard[i][j] != '.') {
+  int rowUp = row;
+  int rowDown = row;
+  int diagonalLTop = col;
+  int diagonalLBot = col;
+  int diagonalRTop = col;
+  int diagonalRBot = col;
+
+  // move through every row
+  for (int i = 0; i < n; i++) {
+    // check squares to top left of square
+    if (diagonalLTop >= 0 && rowUp >= 0 && board[rowUp][diagonalLTop] != '.') {
       return false;
     }
-    i--;
-    j--;
-  }
-  i = col;
-  j = row;
-  while (i >= 0 && j < n) {
-    if (currBoard[i][j] != '.') {
+
+    // check square to top right of square
+    if (diagonalRTop < n && rowUp >= 0 && board[rowUp][diagonalRTop] != '.') {
       return false;
     }
-    i--;
-    j++;
+
+    // check squares to bot left of squares
+    if (diagonalLBot >= 0 && rowDown < n &&
+        board[rowDown][diagonalLBot] != '.') {
+      return false;
+    }
+
+    // check squares to bot right of squares
+    if (diagonalRBot < n && rowDown < n &&
+        board[rowDown][diagonalRBot] != '.') {
+      return false;
+    }
+    rowUp--;
+    rowDown++;
+    diagonalRTop++;
+    diagonalRBot++;
+    diagonalLBot--;
+    diagonalLTop--;
   }
 
   return true;
 }
 
-void SolveNQueens::dfs(int indexC, int count, int n, vector<string> currBoard,
-                       vector<vector<string>> &solutions) {
+void SolveNQueens::recGen(vector<string> &board,
+                          vector<vector<string>> &solutions, int currRow, int n,
+                          int queens) {
   // if count is equal to n then we have placed all the queens on the board and
   // the solution is valid
-  if (count == n) {
-    solutions.push_back(currBoard);
+  if (queens == n) {
+    solutions.push_back(board);
     return;
   }
 
   // if the current index is greater than the size of the board we have gone out
   // of bounds
-  if (indexC >= n) {
+  if (currRow >= n) {
     return;
   }
 
-  // while
-  for (int indexR = 0; indexR < n; indexR++) {
-    // if the board is valid
-    cout << ++runs << endl;
-    if (valid(indexC, indexR, currBoard)) {
-      currBoard[indexC][indexR] = 'Q';
-      dfs(indexC + 1, count + 1, n, currBoard, solutions);
-      currBoard[indexC][indexR] = '.';
+  // this call of the function will try to place a queen in every square of this
+  // row
+  for (int currCol = 0; currCol < n; currCol++) {
+    // print the board in its current state
+    if (aFile.is_open()) {
+      printBoard(board, currRow, currCol);
+    }
+
+    // check to see if this spot on the board is legal
+    if (isValidGen(board, currRow, currCol)) {
+      queens++;
+      // we know its good so we place a queen
+      board[currRow][currCol] = 'Q';
+      // recursively call this function to find the next legal position in the
+      // next row
+      recGen(board, solutions, currRow + 1, n, queens);
+
+      queens--;
+      // if we come back here a solution was not found so remove the queen we
+      // just placed
+      board[currRow][currCol] = '.';
     }
   }
 }
 
-vector<vector<string>> SolveNQueens::solveNQueens(int n) {
-  vector<string> currBoard;
+vector<vector<string>> SolveNQueens::solveGeneral(int n, bool writeState) {
+  vector<string> board;
   string currColmn;
   vector<vector<string>> solutions;
+
+  if (!writeState) {
+    aFile.close();
+  }
+  // mark every column in the row as empty
+  for (int i = 0; i < n; i++) {
+    currColmn += '.';
+  }
+
+  // add empty array to every row on board
+  for (int i = 0; i < n; i++) {
+    board.push_back(currColmn);
+  }
+
+  recGen(board, solutions, 0, n, 0);
+  return solutions;
+}
+
+bool SolveNQueens::isValidOpt(vector<string> board, int row, int col) {
+  int n = board.size();
+  int diagonalL = col;
+  int diagonalR = col;
+
+  while (row >= 0) {
+    // check square above this square
+    if (board[row][col] != '.') {
+      return false;
+    }
+
+    // check square diagonal to the left
+    if (diagonalL >= 0 && board[row][diagonalL] != '.') {
+      return false;
+    }
+
+    // check square diagonal to the right
+    if (diagonalR < n && board[row][diagonalR] != '.') {
+      return false;
+    }
+
+    // move to next row
+    row--;
+    diagonalL--;
+    diagonalR++;
+  }
+
+  return true;
+}
+void SolveNQueens::recOpt(vector<string> &board,
+                          vector<vector<string>> &solutions, int currRow, int n,
+                          int queens) {
+  // if we have placed all the queens then this is a valid solution
+  if (queens == n) {
+    solutions.push_back(board);
+    return;
+  }
+
+  // if the current row equals n we have reach the end of the board
+  if (currRow >= n) {
+    return;
+  }
+
+  // loop through every column in the current row
+  for (int currCol = 0; currCol < n; currCol++) {
+    if (aFile.is_open()) {
+      printBoard(board, currRow, currCol);
+    }
+    // check diagonally to the left and right
+    // check directly above
+    if (isValidOpt(board, currRow, currCol)) {
+      queens++;
+      // if there are no queens we can place one
+      board[currRow][currCol] = 'Q';
+
+      // call the functions again to move on to the next row
+      recOpt(board, solutions, currRow + 1, n, queens);
+
+      queens--;
+      // if we return here then we need to remove the queen and try another spot
+      board[currRow][currCol] = '.';
+    }
+  }
+}
+
+vector<vector<string>> SolveNQueens::solveOpt(int n, bool writeState) {
+  vector<string> board;
+  string currColmn;
+  vector<vector<string>> solutions;
+
+  if (!writeState) {
+    aFile.close();
+  }
 
   // mark every column in the row as empty
   for (int i = 0; i < n; i++) {
@@ -100,52 +226,9 @@ vector<vector<string>> SolveNQueens::solveNQueens(int n) {
 
   // add empty array to every row on board
   for (int i = 0; i < n; i++) {
-    currBoard.push_back(currColmn);
+    board.push_back(currColmn);
   }
 
-  //
-  dfs(0, 0, n, currBoard, solutions);
-
+  recOpt(board, solutions, 0, n, 0);
   return solutions;
-}
-
-void solve1(int col, vector<string> &board, vector<vector<string>> &ans,
-            vector<int> &leftRow, vector<int> &upperDiagonal,
-            vector<int> &lowerDiagonal, int n) {
-  if (col == n) {
-    ans.push_back(board);
-    return;
-  }
-
-  for (int row = 0; row < n; row++) {
-    if (leftRow[row] == 0 && upperDiagonal[n - 1 + col - row] == 0 &&
-        lowerDiagonal[row + col] == 0) {
-      board[row][col] = 'Q';
-      leftRow[row] = 1;
-      upperDiagonal[n - 1 + col - row] = 1;
-      lowerDiagonal[row + col] = 1;
-      solve1(col + 1, board, ans, leftRow, upperDiagonal, lowerDiagonal, n);
-      board[row][col] = '.';
-      leftRow[row] = 0;
-      upperDiagonal[n - 1 + col - row] = 0;
-      lowerDiagonal[row + col] = 0;
-    }
-  }
-}
-
-vector<vector<string>> SolveNQueens::solveFaster(int n) {
-
-  vector<vector<string>> ans;
-  vector<string> board(n);
-  string s(n, '.');
-  for (int i = 0; i < n; i++) {
-    board[i] = s;
-  }
-
-  // solve(0 , board , ans , n);
-
-  vector<int> leftRow(n, 0), upperDiagonal(2 * n - 1, 0),
-      lowerDiagonal(2 * n - 1, 0);
-  solve1(0, board, ans, leftRow, upperDiagonal, lowerDiagonal, n);
-  return ans;
 }
